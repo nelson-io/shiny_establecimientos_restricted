@@ -4,13 +4,24 @@ library(leaflet)
 library(sf)
 library(DT)
 library(janitor)
+library(shinydashboard)
 
 load("data.Rdata")
 choices <- c("Todos", sort(unique(x$permitido)))
-choices_act <- c("Todas", sort(unique(x$actividadc)))
+choices_act <- c("Todas","Permitidas", sort(unique(x$actividadc)))
 choices_esenc <- c("Todas", sort(unique(x$esencial)))
 choices_zona <- c("CABA", sort(unique(x$intersected)))
+choices_comunas <- c("Todas", sort(unique(x$comunas)))
 
+act_excluidas <- c("Industrias","Depósitos","DESOCUPADO",
+  "Peluquerías, manicuras,  pedicuras, centros de belleza, spas y  depilación",
+  "Hoteles, hoteles familiares, pensiones y geriátricos",
+  "Gimnasios, canchas de alquiler y yoga",
+  "Locales para esparcimiento (peloteros, teatros, cines, locales bailables)",
+  "Locutorios y servicios de Internet","Tatuajes y Piercings",
+  "Paseos de compras (puestos con estructura de metal)")
+
+act_incluidas <- unique(data$actividadc)[!(unique(data$actividadc) %in% act_excluidas)]
 
 
 #meter dentro del rdata!!!
@@ -42,6 +53,7 @@ ui <- navbarPage(
                          right = 10, 
                          left = "auto",
                          bottom = "auto",
+                         
                          
                          
                          selectInput(
@@ -86,7 +98,19 @@ ui <- navbarPage(
                              selectize = T
                              
                              
-                         )
+                         ),
+                         
+                         selectInput(
+                             "comunas",
+                             "Comuna",
+                             choices = choices_comunas,
+                             selected = 'Todas',
+                             multiple = F,
+                             selectize = T
+                             
+                         ),
+                         
+                         infoBoxOutput("total_comercios"),
                      )
                  )
                  
@@ -108,6 +132,7 @@ server <- function(input, output, session) {
     
     filtered_data_2 <- reactive({
         if("Todas" %in% input$act_input){filtered_data()}
+        else if("Permitidas" %in% input$act_input){filtered_data() %>% filter(actividadc %in% c(act_incluidas,input$act_input ))}
         else{filtered_data() %>% filter(actividadc %in% input$act_input)}
     })
     
@@ -121,13 +146,28 @@ server <- function(input, output, session) {
         else{filtered_data_3() %>% filter(intersected %in% input$zonas_input)}
     })
     
+    filtered_data_5 <- reactive({
+        if("Todas" %in% input$comunas){filtered_data_4()}
+        else{filtered_data_4() %>% filter(comunas %in% input$comunas)}
+    })
+    
+    
+    
     filtered_data_table <- reactive({
-        filtered_data_4() %>% 
+        filtered_data_5() %>% 
             st_drop_geometry() %>% 
             group_by(`Actividad` = actividadc) %>% 
             summarise(`Total` = n()) %>% 
             ungroup() %>% 
             adorn_totals()
+    })
+    
+    totals <- reactive({
+        
+        filtered_data_5() %>% 
+            st_drop_geometry() %>% 
+            summarise(total = n())
+
     })
     
     output$mapa_caba <- renderLeaflet({
@@ -141,12 +181,16 @@ server <- function(input, output, session) {
     
     observe({
         
-        leafletProxy("mapa_caba", data = filtered_data_4()) %>%
+        leafletProxy("mapa_caba", data = filtered_data_5()) %>%
             clearMarkerClusters() %>% 
-            addMarkers(clusterOptions = markerClusterOptions(),popup = filtered_data_4()$data_labels)
+            addMarkers(clusterOptions = markerClusterOptions(),popup = filtered_data_5()$data_labels)
     })
     
     output$table <- DT::renderDataTable({filtered_data_table()})
+    
+    output$total_comercios <- renderInfoBox({
+        infoBox("Total de comercios:", totals())  
+    })
     
     
     

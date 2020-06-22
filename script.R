@@ -89,10 +89,19 @@ data <- data %>% st_cast('POINT')
 
 #generamos labels
 
-data$data_labels <- paste(sep = "<br/>",
-                          paste0("<b>",data$nombrecome,"</b>"),
-                          paste0("CUIT ", data$cuit),
-                          data$actividadc)
+data$data_labels <- paste(
+  sep = "<br/>",
+  # paste0("<b>",data$nombrecome,"</b>"),
+  # paste0("CUIT ", data$cuit),
+  data$actividadc)
+
+
+#importamos tabla de comunas
+comunas <- st_read("http://cdn.buenosaires.gob.ar/datosabiertos/datasets/comunas/CABA_comunas.geojson") %>% 
+  clean_names() %>% 
+  select(comunas)
+
+data <- st_join(data, comunas)
 
 
 export(data, "data.Rdata")
