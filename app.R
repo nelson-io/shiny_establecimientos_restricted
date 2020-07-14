@@ -6,6 +6,7 @@ library(DT)
 library(janitor)
 library(shinydashboard)
 
+
 load("data.Rdata")
 choices <- c("Todos", sort(unique(x$permitido)))
 choices_act <- c("Todas","Permitidas", sort(unique(x$actividadc)))
@@ -21,14 +22,14 @@ act_excluidas <- c("Industrias","Depósitos","DESOCUPADO",
   "Locutorios y servicios de Internet","Tatuajes y Piercings",
   "Paseos de compras (puestos con estructura de metal)")
 
-act_incluidas <- unique(data$actividadc)[!(unique(data$actividadc) %in% act_excluidas)]
+act_incluidas <- unique(x$actividadc)[!(unique(x$actividadc) %in% act_excluidas)]
 
 
 #meter dentro del rdata!!!
 poli_list <- list()
 poli_list$zonas <- st_read("zonas_comerciales.geojson")
 poli_list$corredores <- st_read("corredores_lineales_modif.shp") %>% 
-    st_transform(crs = 5347) %>% 
+    st_transform(crs = 5347) %>% ``
     st_buffer(dist = 13) %>%
     st_transform(crs = 4326)
 
@@ -105,7 +106,7 @@ ui <- navbarPage(
                              "Comuna",
                              choices = choices_comunas,
                              selected = 'Todas',
-                             multiple = F,
+                             multiple = T,
                              selectize = T
                              
                          ),
@@ -156,7 +157,7 @@ server <- function(input, output, session) {
     filtered_data_table <- reactive({
         filtered_data_5() %>% 
             st_drop_geometry() %>% 
-            group_by(`Actividad` = actividadc) %>% 
+            group_by(`Actividad` = actividadc, `Comuna` = comuna) %>% 
             summarise(`Total` = n()) %>% 
             ungroup() %>% 
             adorn_totals()

@@ -91,8 +91,8 @@ data <- data %>% st_cast('POINT')
 
 data$data_labels <- paste(
   sep = "<br/>",
-  # paste0("<b>",data$nombrecome,"</b>"),
-  # paste0("CUIT ", data$cuit),
+  paste0("<b>",data$nombrecome,"</b>"),
+  paste0("CUIT ", data$cuit),
   data$actividadc)
 
 
