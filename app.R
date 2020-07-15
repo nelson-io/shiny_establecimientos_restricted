@@ -29,7 +29,7 @@ act_incluidas <- unique(x$actividadc)[!(unique(x$actividadc) %in% act_excluidas)
 poli_list <- list()
 poli_list$zonas <- st_read("zonas_comerciales.geojson")
 poli_list$corredores <- st_read("corredores_lineales_modif.shp") %>% 
-    st_transform(crs = 5347) %>% ``
+    st_transform(crs = 5347) %>% 
     st_buffer(dist = 13) %>%
     st_transform(crs = 4326)
 
