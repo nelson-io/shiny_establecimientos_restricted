@@ -5,6 +5,8 @@ library(sf)
 library(DT)
 library(janitor)
 library(shinydashboard)
+library(tidyr)
+library(rio)
 
 
 load("data.Rdata")
@@ -120,7 +122,9 @@ ui <- navbarPage(
              )),
     tabPanel("Tabla de resumen",
              
-             DT::dataTableOutput("table"))
+             DT::dataTableOutput("table"),
+             
+             downloadButton('download', "Descargar datos filtrados"))
 )
 
 server <- function(input, output, session) {
@@ -157,10 +161,13 @@ server <- function(input, output, session) {
     filtered_data_table <- reactive({
         filtered_data_5() %>% 
             st_drop_geometry() %>% 
-            group_by(`Actividad` = actividadc, `Comuna` = comuna) %>% 
+            group_by(`Actividad` = actividadc, `Comuna` = comunas) %>% 
             summarise(`Total` = n()) %>% 
             ungroup() %>% 
-            adorn_totals()
+            spread(key = `Comuna`,value = `Total`) %>% 
+            adorn_totals(where = 'col')
+            
+
     })
     
     totals <- reactive({
@@ -192,6 +199,13 @@ server <- function(input, output, session) {
     output$total_comercios <- renderInfoBox({
         infoBox("Total de comercios:", totals())  
     })
+    
+    output$download <- downloadHandler(
+      filename = "comercios.xlsx",
+      content = function(file){
+        export(filtered_data_table(), file)
+      }
+    )
     
     
     
